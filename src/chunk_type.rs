@@ -6,13 +6,11 @@ use std::fmt;
 use crate::chunk;
 
 #[derive(Debug, Eq, PartialEq)]
-struct ChunkType {
-    value: [u8; 4]
-}
+struct ChunkType([u8; 4]);
 
 impl ChunkType {
     fn bytes(&self) -> [u8; 4] {
-        self.value
+        self.0
     }
 
     fn is_valid(&self) -> bool {
@@ -21,19 +19,19 @@ impl ChunkType {
     }
 
     fn is_critical(&self) -> bool {
-        self.value[0] & (1 << 5) == 0
+        self.0[0] & (1 << 5) == 0
     }
 
     fn is_public(&self) -> bool {
-        self.value[1] & (1 << 5) == 0
+        self.0[1] & (1 << 5) == 0
     }
 
     fn is_reserved_bit_valid(&self) -> bool {
-        self.value[2] & (1 << 5) == 0
+        self.0[2] & (1 << 5) == 0
     }
 
     fn is_safe_to_copy(&self) -> bool {
-        self.value[3] & (1 << 5) != 0
+        self.0[3] & (1 << 5) != 0
     }
 }
 
@@ -41,7 +39,7 @@ impl TryFrom<[u8; 4]> for ChunkType {
     type Error = ();
 
     fn try_from(bytes: [u8; 4]) -> Result<Self, Self::Error> {
-        Ok(ChunkType { value: bytes })
+        Ok(ChunkType(bytes))
     }
 }
 
@@ -61,13 +59,13 @@ impl FromStr for ChunkType {
         // } else {
         //     Err(ChunkTypeError::InvalidChunkType)
         // }
-        Ok(ChunkType { value: s.as_bytes().try_into().map_err(ChunkTypeError::SizeError)? })
+        Ok(ChunkType(s.as_bytes().try_into().map_err(ChunkTypeError::SizeError)?))
     }
 }
 
 impl fmt::Display for ChunkType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", String::from_utf8_lossy(&self.value))
+        write!(f, "{}", String::from_utf8_lossy(&self.0))
     }
 }
 
