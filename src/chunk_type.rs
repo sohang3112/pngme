@@ -1,39 +1,39 @@
-use std::num::TryFromIntError;
 use std::convert::TryFrom;
+use std::array::TryFromSliceError;
 use std::str::FromStr;
 use std::fmt;
 
+use crate::chunk;
+
 #[derive(Debug, Eq, PartialEq)]
 struct ChunkType {
-    length: u32,          // <= 2^31 , i.e., first byte must be 0
-    chunk_type: [char; 4],
-    chunk_data: Vec<u8>,
-    crc: u32              // Cyclic Redundancy Check
+    value: [u8; 4]
 }
 
 impl ChunkType {
     fn bytes(&self) -> [u8; 4] {
-        todo!()
+        self.value
     }
 
     fn is_valid(&self) -> bool {
-        todo!()
+        let valid_types = ["IHDR", "PLTE", "IDAT", "IEND", "tEXt", "zTXt", "iTXt", "pHYs"].map(|s| ChunkType::from_str(s).unwrap());
+        valid_types.contains(self)
     }
 
     fn is_critical(&self) -> bool {
-        todo!()
+        self.value[0] & (1 << 5) == 0
     }
 
     fn is_public(&self) -> bool {
-        todo!()
+        self.value[1] & (1 << 5) == 0
     }
 
     fn is_reserved_bit_valid(&self) -> bool {
-        todo!()
+        self.value[2] & (1 << 5) == 0
     }
 
     fn is_safe_to_copy(&self) -> bool {
-        todo!()
+        self.value[3] & (1 << 5) != 0
     }
 }
 
@@ -41,31 +41,33 @@ impl TryFrom<[u8; 4]> for ChunkType {
     type Error = ();
 
     fn try_from(bytes: [u8; 4]) -> Result<Self, Self::Error> {
-        Ok(ChunkType {
-            length: 4,
-            chunk_type: ['A', 'A', 'A', 'A'],
-            chunk_data: bytes.to_vec(),
-            crc: 0
-        })
+        Ok(ChunkType { value: bytes })
     }
 }
 
+#[derive(Debug)]
+enum ChunkTypeError {
+    SizeError(TryFromSliceError),
+    InvalidChunkType
+}
+
 impl FromStr for ChunkType {
-    type Err = TryFromIntError;
+    type Err = ChunkTypeError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(ChunkType {
-            length: s.len().try_into()?,
-            chunk_type: ['A', 'A', 'A', 'A'],
-            chunk_data: s.as_bytes().to_vec(),
-            crc: 0
-        })
+        // let chunk = ChunkType { value: s.as_bytes().try_into().map_err(ChunkTypeError::SizeError)? };
+        // if chunk.is_valid() {
+        //     Ok(chunk)
+        // } else {
+        //     Err(ChunkTypeError::InvalidChunkType)
+        // }
+        Ok(ChunkType { value: s.as_bytes().try_into().map_err(ChunkTypeError::SizeError)? })
     }
 }
 
 impl fmt::Display for ChunkType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        todo!()
+        write!(f, "{}", String::from_utf8_lossy(&self.value))
     }
 }
 
