@@ -1,12 +1,13 @@
 use std::convert::TryFrom;
 use std::array::TryFromSliceError;
+use std::error::Error;
 use std::str::FromStr;
 use std::fmt;
 
 use crate::chunk;
 
 #[derive(Debug, Eq, PartialEq)]
-struct ChunkType([u8; 4]);
+pub struct ChunkType([u8; 4]);
 
 impl ChunkType {
     fn bytes(&self) -> [u8; 4] {
@@ -14,8 +15,7 @@ impl ChunkType {
     }
 
     fn is_valid(&self) -> bool {
-        let valid_types = ["IHDR", "PLTE", "IDAT", "IEND", "tEXt", "zTXt", "iTXt", "pHYs"].map(|s| ChunkType::from_str(s).unwrap());
-        valid_types.contains(self)
+        self.is_reserved_bit_valid()
     }
 
     fn is_critical(&self) -> bool {
@@ -44,7 +44,7 @@ impl TryFrom<[u8; 4]> for ChunkType {
 }
 
 #[derive(Debug)]
-enum ChunkTypeError {
+pub enum ChunkTypeError {
     SizeError(TryFromSliceError),
     InvalidChunkType
 }
@@ -53,13 +53,11 @@ impl FromStr for ChunkType {
     type Err = ChunkTypeError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        // let chunk = ChunkType { value: s.as_bytes().try_into().map_err(ChunkTypeError::SizeError)? };
-        // if chunk.is_valid() {
-        //     Ok(chunk)
-        // } else {
-        //     Err(ChunkTypeError::InvalidChunkType)
-        // }
-        Ok(ChunkType(s.as_bytes().try_into().map_err(ChunkTypeError::SizeError)?))
+        if s.chars().all(|c| c.is_alphabetic()) {
+            Ok(ChunkType(s.as_bytes().try_into().map_err(ChunkTypeError::SizeError)?))
+        } else {
+            Err(ChunkTypeError::InvalidChunkType)
+        }
     }
 }
 

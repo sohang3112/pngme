@@ -7,3 +7,5 @@ Following [the pngme book](https://picklenerd.github.io/pngme_book/) to implemen
 - Decode a message stored in a PNG file
 - Remove a message from a PNG file
 - Print a list of PNG chunks that can be searched for messages
+
+**Note:** When stuck, I peak at [this solution](https://github.com/gabebw/pngme) 🙂.
